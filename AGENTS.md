@@ -31,36 +31,13 @@ this file repeats their rules in the form an agent needs, and links to them for 
   `tools/disable.sh`, `disable.ps1` and `check.py --fix` refuse such a list, with no override.
 - **Never start a factory or test package** (`com.cvte.tv.hkcfac`, `mediatek.factorymenu.ui` and the like),
   not even to look. On some boards that flips a factory-mode flag the shell cannot undo.
-- **Keep the Home guard.** The stock launcher is disabled only after the new launcher is installed and
-  confirmed as Home (`dumpsys activity activities | grep mFocusedApp`). On Google TV, check
-  `dumpsys wifi | grep -o 'cname=[^ ]*'` before disabling setupwraith: if it owns the saved Wi-Fi
-  network, disabling it takes the TV off Wi-Fi and ADB. `tools/disable.sh` and
-  `launcher/build-and-install.sh` already enforce this. Use `FORCE_HOME=1` or `FORCE_SETUPWRAITH=1` only in
-  the situation the script's own message describes, and only with the person's agreement.
-  - On a CVTE board (any `com.cvte.*` package), leave its stock launcher (`com.cvte.tv.launcher.*`) enabled
-    unless the `examples/` folder for that exact board disables it. Make the new launcher Home with
-    `cmd package set-home-activity`, reboot once, and confirm Home and ADB come back before anything else.
-    Don't enable a remote-key helper in the same pass: a JVC set hung on its boot animation with ADB gone
-    after both were done before one reboot (#741).
-- **Ask before anything the family uses.** Streaming apps, the voice assistant, Chromecast, Miracast and
-  the firmware updater go into one checklist question; disable only what the person does not tick.
 - **Disable in small batches** and screenshot between them (`tools/tv.py --screenshot shots/01.png`).
   Live TV, HDMI and some streaming apps give empty screenshots; that is the TV, not damage.
 - **An injected key is not proof** for a remote button that goes through an accessibility helper: ask the
   person to press the real button. `am force-stop com.gathin.tvhome` switches those helpers off.
-- **Close ADB afterwards.** Wireless debugging and Network/ADB debugging off, and USB debugging unless
-  the person asks to keep it; authorisations revoked. Wireless debugging has its own port
-  (`adb mdns services` lists it as `_adb-tls-connect._tcp`): check it with
-  `tools/adb-closed.py <tv ip> <port>` straight after switching it off, before the reboot, as it takes
-  a new port each start. Then reboot: `tools/adb-closed.py <tv ip>` must report 5555 closed, with
-  Wireless debugging still off. If 5555 still answers with USB debugging kept on, switch that off too.
-  Only the tool's "closed" counts. Port 5555 is plaintext.
 - **Stop and say so** when the TV refuses: `pm disable-user` refused for every package, a sideload that
   fails verification, or an SDK below the launcher's `minSdk` 25. Do not retry in a loop, and do not lower
   `minSdk` or hand over an APK built elsewhere.
-- **Not an Android TV?** No ADB port at all, or the set identifies as Tizen, webOS, Roku OS, VIDAA or
-  SmartCast: stop, nothing here applies. Send the person to https://cleanyour.tv/not-android, which turns
-  off the tracking with the remote.
 
 The person's backups (`backup/`), screenshots (`shots/`), notes (`work/`) and the ADB key
 (`tools/adbkey/`) are listed in `.gitignore` and must never be committed. If the person wants to
