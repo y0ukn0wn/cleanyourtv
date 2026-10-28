@@ -45,25 +45,13 @@ Back up first
   before changing anything, and write a restore script that re-enables everything you disable.
 
 Debloat
-- List installed packages and sort them into: manufacturer telemetry/analytics, manufacturer content
+- List installed packages and search for manufacturer telemetry/analytics, manufacturer content
   and ad services (PatchWall, recommendation rows, content providers), background services I probably
   don't need (share/cast duplicates, cleaners), preloaded apps, and streaming apps.
-- Disable the first categories with `pm disable-user --user 0`, never uninstall system packages.
-- Never disable what the TV needs to work: the TV app and input services that play HDMI and the
-  tuner, the input/source menu, remote control and Bluetooth pairing services, the on-screen
-  keyboard, Google Play Store and Play Services. Manufacturer package names often don't say what a
-  package does: check its activities and services with `dumpsys package` first, and ask me if it's
-  still unclear.
-- Never disable Android's own core packages, or the TV may not boot again: the permission controller,
-  the package installer, ext services and ext shared, module metadata (each as `com.android.*` or
-  `com.google.android.*`, and ext services and ext shared also as the bare `android.ext.services` and
-  `android.ext.shared`), `com.google.android.overlay.modules*`, `com.android.providers.*` (calendar,
-  contacts, user dictionary and blocked numbers aside), `com.android.systemui`, `com.android.shell`,
-  `com.android.phone`, `com.android.settings`, `com.android.tv.settings` and `android`. An original Mi TV
-  Stick never booted again after a list took the first six
-  ([#884](https://github.com/Gathin23/cleanyourtv/issues/884)); `tools/disable.sh` refuses such a list.
-- Before touching streaming apps, voice assistant, Chromecast, Miracast or the update service, ask me
-  which ones I use with a checklist question and disable only what I don't tick.
+- Give me a checklist and disable only what I tick.
+- Disable with `pm disable-user --user 0`, never uninstall system packages.
+- Never disable what the TV needs to work.
+- Never disable Android's own core packages, or the TV may not boot again.
 - Run `pm` commands one per shell call, chained commands may silently stop after the first.
 - If `pm disable-user` is refused for every package, stop and tell me: some firmware (Fire OS 5 on a
   Fire TV Box, for one) refuses `pm disable-user` with a `SecurityException`, `pm uninstall --user 0`
@@ -77,25 +65,13 @@ Debloat
   makes the next boot disable Play services, Netflix and Chromecast - which the shell then cannot
   re-enable. `dumpsys package <name>` tells you what a package is without starting it, and
   `docs/TROUBLESHOOTING.md` has the way out if one has been opened.
-- Disable in small batches and screenshot between them: a batch can take something load-bearing with
-  it and you cannot tell which.
-- After the last batch, wait about 15 seconds before rebooting - Android writes package state to
+- After disabling, wait about 15 seconds before rebooting - Android writes package state to
   disk about ten seconds after a change (`WRITE_SETTINGS_DELAY`, `docs/TROUBLESHOOTING.md`), so a
   reboot sent straight after the batch boots with the old state and what came back reads as
   firmware re-enabling packages it never re-enabled. `adb shell sync` first is fine too. Then reboot
   once and compare `pm list packages -d` with what you disabled: some
   firmware re-enables packages at every boot from its own list (TCL Android 9 does this for its user
-  center). Note those in the list header instead of disabling them again after each boot. If
-  setupwraith or the stock launcher came back and Home is black, check `logcat | grep
-  RecoveryActivity` and re-enable the stock launcher before anything else
-  (`docs/devices/acer-r4g.md`).
-- Offer me ad-blocking DNS as an optional extra: on Android 9 and newer, Private DNS set to an
-  ad-blocking resolver (`settings put global private_dns_specifier dns.adguard-dns.com`, then
-  `settings put global private_dns_mode hostname`). Tell me it doesn't block YouTube ads, check an app
-  still plays afterwards, and note the undo (`private_dns_mode opportunistic`) in the README.
-  Ask me first whether my router already filters or routes traffic by domain through its own DNS
-  (Pi-hole, AdGuard Home, a VPN with domain lists, a fake-IP proxy): Private DNS goes around it, so those
-  rules stop applying to the TV, and blocking on the router is the better choice there.
+  center). Note those in the list header instead of disabling them again after each boot.
 
 Launcher
 - Check that the TV accepts APKs before building anything. Some China-market sets answer every
@@ -114,24 +90,14 @@ Launcher
   and a set with no recovery has no way back (#795).
 - Don't install a third-party launcher that charges for basics like wallpapers. Build a small native
   Android TV launcher instead (Java, AndroidX RecyclerView, minSdk matching the TV, debug build is fine),
-  install it over ADB, set it as the default home and disable the stock launcher. If several apps claim
+  install it over ADB, set it as the default home. If several apps claim
   the HOME intent, list them with `cmd package query-activities -a android.intent.action.MAIN -c
   android.intent.category.HOME` and set the default with `cmd package set-home-activity`. Those two
   commands can both name your launcher while Home still opens something else: on some Google TV builds
   `set-home-activity` prints `Success` and changes nothing, and setupwraith's `.RecoveryActivity`
   keeps the key. Confirm with `dumpsys activity activities | grep mFocusedApp` before telling me the
   takeover worked.
-- Before disabling the stock launcher, check which other apps claim HOME: on Google TV the setup wizard
-  (`com.google.android.tungsten.setupwraith`) takes over even after the stock launcher is disabled, and
-  the matching `examples/` header says what to do. Before disabling setupwraith, run
-  `dumpsys wifi | grep -o 'cname=[^ ]*'`: a Wi-Fi network saved during first setup belongs to it, and
-  Android deletes that network the moment it is disabled, which takes the TV off Wi-Fi and ADB. If it
-  does, ask me to forget the network and re-join it in Settings first.
-- On a CVTE board (any `com.cvte.*` package), leave its stock launcher (`com.cvte.tv.launcher.*`) enabled
-  unless the `examples/` folder for that exact board disables it: make your launcher Home with
-  `set-home-activity`, reboot once, and confirm Home and ADB come back before anything else. Don't enable a
-  remote-key helper in the same pass. A JVC LT-43N7115 (`TP.SK706S.PC822`, Android 11) hung on its boot
-  animation with ADB gone after both were done before one reboot (#741).
+- Don't disable the stock launcher.
 - On Google TV the stock launcher also answers the remote's app buttons (Netflix, YouTube and the like),
   Input and Settings/dashboard buttons, so after disabling it ask me to press each one, and remap any that
   do nothing with the launcher's key services: `input_key_keycodes` and `app_keys` with
